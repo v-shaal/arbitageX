@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArbitrageX - AI-Powered Deal Sourcing</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="wrapper">
+        <!-- Sidebar -->
+        <nav id="sidebar">
+            <div class="sidebar-header">
+                <h3>ArbitrageX</h3>
+                <p>Deal Sourcing Engine</p>
+            </div>
+
+            <ul class="list-unstyled components">
+                <li class="active">
+                    <a href="#" data-page="dashboard"><i class="bi bi-speedometer2"></i> Dashboard</a>
+                </li>
+                <li>
+                    <a href="#" data-page="companies"><i class="bi bi-building"></i> Companies</a>
+                </li>
+                <li>
+                    <a href="#" data-page="strategies"><i class="bi bi-graph-up"></i> Strategies</a>
+                </li>
+                <li>
+                    <a href="#" data-page="upload"><i class="bi bi-upload"></i> Upload Data</a>
+                </li>
+                <li>
+                    <a href="#" data-page="analysis"><i class="bi bi-bar-chart"></i> Analysis</a>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <p>ArbitrageX MVP v0.1.0</p>
+            </div>
+        </nav>
+
+        <!-- Page Content -->
+        <div id="content">
+            <!-- Navbar -->
+            <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                <div class="container-fluid">
+                    <button type="button" id="sidebarCollapse" class="btn btn-info">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <div class="ms-auto d-flex">
+                        <div class="input-group search-bar">
+                            <input type="text" class="form-control" placeholder="Search...">
+                            <button class="btn btn-outline-secondary" type="button"><i class="bi bi-search"></i></button>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-link dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-person-circle"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li><a class="dropdown-item" href="#">Profile</a></li>
+                                <li><a class="dropdown-item" href="#">Settings</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="#">Logout</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Dashboard Page -->
+            <div class="page-content" id="dashboard-page">
+                <div class="container-fluid">
+                    <h1 class="page-title">Dashboard</h1>
+                    <p class="page-description">Welcome to ArbitrageX, your AI-powered deal sourcing engine.</p>
+
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card metric-card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Active Strategies</h5>
+                                    <p class="metric-value">5</p>
+                                    <p class="metric-change positive"><i class="bi bi-arrow-up"></i> 2 new this week</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card metric-card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Companies Analyzed</h5>
+                                    <p class="metric-value">128</p>
+                                    <p class="metric-change positive"><i class="bi bi-arrow-up"></i> 23 new this week</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card metric-card">
+                                <div class="card-body">
+                                    <h5 class="card-title">High Priority Matches</h5>
+                                    <p class="metric-value">12</p>
+                                    <p class="metric-change positive"><i class="bi bi-arrow-up"></i> 3 new this week</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">Recent Activity</h5>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="activity-list">
+                                        <li class="activity-item">
+                                            <div class="activity-icon bg-primary"><i class="bi bi-building"></i></div>
+                                            <div class="activity-content">
+                                                <p class="activity-text">New companies added to Portfolio A</p>
+                                                <p class="activity-time">2 hours ago</p>
+                                            </div>
+                                        </li>
+                                        <li class="activity-item">
+                                            <div class="activity-icon bg-success"><i class="bi bi-graph-up"></i></div>
+                                            <div class="activity-content">
+                                                <p class="activity-text">Strategy "Tech Growth" updated</p>
+                                                <p class="activity-time">5 hours ago</p>
+                                            </div>
+                                        </li>
+                                        <li class="activity-item">
+                                            <div class="activity-icon bg-info"><i class="bi bi-search"></i></div>
+                                            <div class="activity-content">
+                                                <p class="activity-text">5 new matches for "Healthcare" found</p>
+                                                <p class="activity-time">Yesterday</p>
+                                            </div>
+                                        </li>
+                                        <li class="activity-item">
+                                            <div class="activity-icon bg-warning"><i class="bi bi-upload"></i></div>
+                                            <div class="activity-content">
+                                                <p class="activity-text">CSV import completed</p>
+                                                <p class="activity-time">2 days ago</p>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">Quick Actions</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-primary" type="button" data-page="strategies" data-action="new">
+                                            <i class="bi bi-plus-circle"></i> New Strategy
+                                        </button>
+                                        <button class="btn btn-success" type="button" data-page="upload" data-action="upload">
+                                            <i class="bi bi-upload"></i> Upload Data
+                                        </button>
+                                        <button class="btn btn-info" type="button" data-page="analysis" data-action="run">
+                                            <i class="bi bi-play-circle"></i> Run Analysis
+                                        </button>
+                                        <button class="btn btn-secondary" type="button" data-action="export">
+                                            <i class="bi bi-download"></i> Export Results
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Companies Page -->
+            <div class="page-content" id="companies-page" style="display: none;">
+                <div class="container-fluid">
+                    <h1 class="page-title">Companies</h1>
+                    <p class="page-description">Explore and manage company data.</p>
+
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h5 class="card-title">Company Explorer</h5>
+                                    <div class="btn-group">
+                                        <button class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-funnel"></i> Filter
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-sort-down"></i> Sort
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-columns"></i> Columns
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Company</th>
+                                                    <th>Industry</th>
+                                                    <th>Revenue</th>
+                                                    <th>Growth</th>
+                                                    <th>Location</th>
+                                                    <th>Strategic Fit</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>TechCorp Inc</td>
+                                                    <td>Enterprise Software</td>
+                                                    <td>$45M</td>
+                                                    <td>22%</td>
+                                                    <td>Boston, MA</td>
+                                                    <td>
+                                                        <div class="progress">
+                                                            <div class="progress-bar bg-success" role="progressbar" style="width: 92%;" aria-valuenow="92" aria-valuemin="0" aria-valuemax="100">92%</div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-outline-primary" data-action="view-company" data-id="1">View</button>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>DataSys</td>
+                                                    <td>Data Analytics</td>
+                                                    <td>$32M</td>
+                                                    <td>18%</td>
+                                                    <td>San Francisco, CA</td>
+                                                    <td>
+                                                        <div class="progress">
+                                                            <div class="progress-bar bg-success" role="progressbar" style="width: 87%;" aria-valuenow="87" aria-valuemin="0" aria-valuemax="100">87%</div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-outline-primary" data-action="view-company" data-id="2">View</button>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>AICore</td>
+                                                    <td>Artificial Intelligence</td>
+                                                    <td>$28M</td>
+                                                    <td>35%</td>
+                                                    <td>Austin, TX</td>
+                                                    <td>
+                                                        <div class="progress">
+                                                            <div class="progress-bar bg-success" role="progressbar" style="width: 85%;" aria-valuenow="85" aria-valuemin="0" aria-valuemax="100">85%</div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-outline-primary" data-action="view-company" data-id="3">View</button>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>CloudNet</td>
+                                                    <td>Cloud Infrastructure</td>
+                                                    <td>$52M</td>
+                                                    <td>15%</td>
+                                                    <td>Seattle, WA</td>
+                                                    <td>
+                                                        <div class="progress">
+                                                            <div class="progress-bar bg-warning" role="progressbar" style="width: 68%;" aria-valuenow="68" aria-valuemin="0" aria-valuemax="100">68%</div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-outline-primary" data-action="view-company" data-id="4">View</button>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>SecureTech</td>
+                                                    <td>Cybersecurity</td>
+                                                    <td>$18M</td>
+                                                    <td>42%</td>
+                                                    <td>Washington, DC</td>
+                                                    <td>
+                                                        <div class="progress">
+                                                            <div class="progress-bar bg-warning" role="progressbar" style="width: 65%;" aria-valuenow="65" aria-valuemin="0" aria-valuemax="100">65%</div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-outline-primary" data-action="view-company" data-id="5">View</button>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Company Detail Modal -->
+                    <div class="modal fade" id="companyDetailModal" tabindex="-1" aria-labelledby="companyDetailModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="companyDetailModalLabel">TechCorp Inc</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="row mb-4">
+                                        <div class="col-md-4">
+                                            <div class="company-logo-placeholder">
+                                                <i class="bi bi-building"></i>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <h4>Strategic Fit: 92%</h4>
+                                            <div class="progress mb-3">
+                                                <div class="progress-bar bg-success" role="progressbar" style="width: 92%;" aria-valuenow="92" aria-valuemin="0" aria-valuemax="100"></div>
+                                            </div>
+                                            <h5>Why this match?</h5>
+                                            <ul>
+                                                <li>Strong revenue growth (22%)</li>
+                                                <li>Market leader in enterprise software segment</li>
+                                                <li>Complementary to existing portfolio</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+
+                                    <ul class="nav nav-tabs" id="companyTabs" role="tablist">
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab" aria-controls="overview" aria-selected="true">Overview</button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" id="financials-tab" data-bs-toggle="tab" data-bs-target="#financials" type="button" role="tab" aria-controls="financials" aria-selected="false">Financials</button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" id="news-tab" data-bs-toggle="tab" data-bs-target="#news" type="button" role="tab" aria-controls="news" aria-selected="false">News</button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link" id="sources-tab" data-bs-toggle="tab" data-bs-target="#sources" type="button" role="tab" aria-controls="sources" aria-selected="false">Sources</button>
+                                        </li>
+                                    </ul>
+                                    <div class="tab-content p-3" id="companyTabsContent">
+                                        <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview-tab">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <p><strong>Founded:</strong> 2015</p>
+                                                    <p><strong>Location:</strong> Boston, MA</p>
+                                                    <p><strong>Employees:</strong> 120</p>
+                                                    <p><strong>Industry:</strong> Enterprise Software</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <p><strong>Website:</strong> <a href="#">techcorp.com</a></p>
+                                                    <p><strong>CEO:</strong> Jane Smith</p>
+                                                    <p><strong>Last Funding:</strong> Series B ($25M)</p>
+                                                    <p><strong>Investors:</strong> Accel, Sequoia</p>
+                                                </div>
+                                            </div>
+                                            <div class="row mt-3">
+                                                <div class="col-md-12">
+                                                    <h5>Company Description</h5>
+                                                    <p>TechCorp Inc is a leading provider of enterprise software solutions focused on workflow automation and business intelligence. The company has shown strong growth in the past 3 years, expanding its customer base across Fortune 500 companies.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="tab-pane fade" id="financials" role="tabpanel" aria-labelledby="financials-tab">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <h5>Key Metrics</h5>
+                                                    <p><strong>Annual Revenue:</strong> $45M</p>
+                                                    <p><strong>Growth Rate:</strong> 22%</p>
+                                                    <p><strong>EBITDA:</strong> $12M</p>
+                                                    <p><strong>EBITDA Margin:</strong> 26.7%</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <h5>Revenue Chart</h5>
+                                                    <div class="chart-placeholder">
+                                                        <i class="bi bi-bar-chart"></i>
+                                                        <p>Revenue growth chart would appear here</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="tab-pane fade" id="news" role="tabpanel" aria-labelledby="news-tab">
+                                            <div class="news-item">
+                                                <h5>TechCorp Announces New Enterprise Platform</h5>
+                                                <p class="news-date">March 15, 2023</p>
+                                                <p>TechCorp Inc has announced the launch of its new enterprise platform, designed to integrate with existing workflows and provide enhanced analytics capabilities.</p>
+                                            </div>
+                                            <div class="news-item">
+                                                <h5>TechCorp Expands European Presence</h5>
+                                                <p class="news-date">January 22, 2023</p>
+                                                <p>TechCorp Inc has opened a new office in London, marking its expansion into the European market.</p>
+                                            </div>
+                                        </div>
+                                        <div class="tab-pane fade" id="sources" role="tabpanel" aria-labelledby="sources-tab">
+                                            <ul class="list-group">
+                                                <li class="list-group-item">
+                                                    <i class="bi bi-file-text"></i>
+                                                    <a href="#">TechCorp Financial Report 2023</a>
+                                                </li>
+                                                <li class="list-group-item">
+                                                    <i class="bi bi-globe"></i>
+                                                    <a href="#">Company Website</a>
+                                                </li>
+                                                <li class="list-group-item">
+                                                    <i class="bi bi-newspaper"></i>
+                                                    <a href="#">TechCrunch Article - March 2023</a>
+                                                </li>
+                                                <li class="list-group-item">
+                                                    <i class="bi bi-file-earmark-pdf"></i>
+                                                    <a href="#">Industry Analysis Report</a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    <button type="button" class="btn btn-primary">Add to Watchlist</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Strategies Page -->
+            <div class="page-content" id="strategies-page" style="display: none;">
+                <div class="container-fluid">
+                    <h1 class="page-title">Investment Strategies</h1>
+                    <p class="page-description">Define and manage your investment criteria.</p>
+
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h5 class="card-title">Strategy Library</h5>
+                                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newStrategyModal">
+                                        <i class="bi bi-plus-circle"></i> New Strategy
+                                    </button>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-4 mb-4">
+                                            <div class="card strategy-card">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">Tech Growth</h5>
+                                                    <p class="card-text">Focus on high-growth technology companies with strong market position.</p>
+                                                    <div class="strategy-meta">
+                                                        <span><i class="bi bi-building"></i> 45 matches</span>
+                                                        <span><i class="bi bi-calendar"></i> Updated 2 days ago</span>
+                                                    </div>
+                                                    <div class="strategy-actions mt-3">
+                                                        <button class="btn btn-sm btn-outline-primary" data-action="edit-strategy" data-id="1">Edit</button>
+                                                        <button class="btn btn-sm btn-outline-success" data-action="run-strategy" data-id="1">Run</button>
+                                                        <button class="btn btn-sm btn-outline-info" data-action="view-results" data-id="1">Results</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 mb-4">
+                                            <div class="card strategy-card">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">Healthcare Innovation</h5>
+                                                    <p class="card-text">Target healthcare companies with innovative solutions and strong IP.</p>
+                                                    <div class="strategy-meta">
+                                                        <span><i class="bi bi-building"></i> 28 matches</span>
+                                                        <span><i class="bi bi-calendar"></i> Updated 1 week ago</span>
+                                                    </div>
+                                                    <div class="strategy-actions mt-3">
+                                                        <button class="btn btn-sm btn-outline-primary" data-action="edit-strategy" data-id="2">Edit</button>
+                                                        <button class="btn btn-sm btn-outline-success" data-action="run-strategy" data-id="2">Run</button>
+                                                        <button class="btn btn-sm btn-outline-info" data-action="view-results" data-id="2">Results</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 mb-4">
+                                            <div class="card strategy-card">
+                                                <div class="card-body">
+                                                    <h5 class="card-title">Fintech Disruptors</h5>
+                                                    <p class="card-text">Focus on financial technology companies disrupting traditional banking.</p>
+                                                    <div class="strategy-meta">
+                                                        <span><i class="bi bi-building"></i> 32 matches</span>
+                                                        <span><i class="bi bi-calendar"></i> Updated 3 days ago</span>
+                                                    </div>
+                                                    <div class="strategy-actions mt-3">
+                                                        <button class="btn btn-sm btn-outline-primary" data-action="edit-strategy" data-id="3">Edit</button>
+                                                        <button class="btn btn-sm btn-outline-success" data-action="run-strategy" data-id="3">Run</button>
+                                                        <button class="btn btn-sm btn-outline-info" data-action="view-results" data-id="3">Results</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- New Strategy Modal -->
+                    <div class="modal fade" id="newStrategyModal" tabindex="-1" aria-labelledby="newStrategyModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="newStrategyModalLabel">Create New Strategy</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <form id="strategyForm">
+                                        <div class="mb-3">
+                                            <label for="strategyName" class="form-label">Strategy Name</label>
+                                            <input type="text" class="form-control" id="strategyName" placeholder="e.g., Tech Growth Strategy">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="strategyDescription" class="form-label">Description</label>
+                                            <textarea class="form-control" id="strategyDescription" rows="3" placeholder="Describe your investment strategy..."></textarea>
+                                        </div>
+                                        
+                                        <h5 class="mt-4">Industry Focus</h5>
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" value="" id="techSoftware">
+                                                    <label class="form-check-label" for="techSoftware">
+                                                        Technology - Software
+                                                    </label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" value="" id="techHardware">
+                                                    <label class="form-check-label" for="techHardware">
+                                                        Technology - Hardware
+                                                    </label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" value="" id="healthcare">
+                                                    <label class="form-check-label" for="healthcare">
+                                                        Healthcare
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" value="" id="fintech">
+                                                    <label class="form-check-label" for="fintech">
+                                                        Financial Technology
+                                                    </label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" value="" id="ecommerce">
+                                                    <label class="form-check-label" for="ecommerce">
+                                                        E-commerce
+                                                    </label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" value="" id="manufacturing">
+                                                    <label class="form-check-label" for="manufacturing">
+                                                        Manufacturing
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <h5 class="mt-4">Financial Criteria</h5>
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <label for="revenueRange" class="form-label">Revenue Range</label>
+                                                <select class="form-select" id="revenueRange">
+                                                    <option value="1">$5M - $20M</option>
+                                                    <option value="2">$20M - $50M</option>
+                                                    <option value="3">$50M - $100M</option>
+                                                    <option value="4">$100M+</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="growthRate" class="form-label">Minimum Growth Rate</label>
+                                                <select class="form-select" id="growthRate">
+                                                    <option value="1">5%+</option>
+                                                    <option value="2">10%+</option>
+                                                    <option value="3">15%+</option>
+                                                    <option value="4">20%+</option>
+                                                    <option value="5">30%+</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        
+                                        <h5 class="mt-4">Geographic Focus</h5>
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" value="" id="northAmerica" checked>
+                                                    <label class="form-check-label" for="northAmerica">
+                                                        North America
+                                                    </label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" value="" id="europe">
+                                                    <label class="form-check-label" for="europe">
+                                                        Europe
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" value="" id="asia">
+                                                    <label class="form-check-label" for="asia">
+                                                        Asia
+                                                    </label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" value="" id="other">
+                                                    <label class="form-check-label" for="other">
+                                                        Other Regions
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <h5 class="mt-4">Priority Setting</h5>
+                                        <div class="mb-3">
+                                            <label for="growthImportance" class="form-label">Growth Importance</label>
+                                            <input type="range" class="form-range" min="1" max="5" id="growthImportance">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="revenueImportance" class="form-label">Revenue Importance</label>
+                                            <input type="range" class="form-range" min="1" max="5" id="revenueImportance">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="marketPositionImportance" class="form-label">Market Position Importance</label>
+                                            <input type="range" class="form-range" min="1" max="5" id="marketPositionImportance">
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="button" class="btn btn-primary" id="saveStrategy">Save Strategy</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload Data Page -->
+            <div class="page-content" id="upload-page" style="display: none;">
+                <div class="container-fluid">
+                    <h1 class="page-title">Upload Data</h1>
+                    <p class="page-description">Import company data and investment strategies.</p>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">CSV Upload</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p>Upload a CSV file containing company data.</p>
+                                    <form id="csvUploadForm">
+                                        <div class="mb-3">
+                                            <label for="csvFile" class="form-label">Select CSV File</label>
+                                            <input class="form-control" type="file" id="csvFile" accept=".csv">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="mappingTemplate" class="form-label">Mapping Template (Optional)</label>
+                                            <select class="form-select" id="mappingTemplate">
+                                                <option value="">None</option>
+                                                <option value="standard">Standard Format</option>
+                                                <option value="crunchbase">Crunchbase Export</option>
+                                                <option value="custom">Custom Template</option>
+                                            </select>
+                                        </div>
+                                        <div class="d-grid gap-2">
+                                            <button class="btn btn-primary" type="submit">Upload CSV</button>
+                                            <a href="#" class="btn btn-outline-secondary">Download Template</a>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">Strategy Document Upload</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p>Upload a document containing investment strategy details.</p>
+                                    <form id="strategyUploadForm">
+                                        <div class="mb-3">
+                                            <label for="strategyFile" class="form-label">Select Document</label>
+                                            <input class="form-control" type="file" id="strategyFile" accept=".pdf,.docx,.txt">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="strategyName" class="form-label">Strategy Name</label>
+                                            <input type="text" class="form-control" id="strategyName" placeholder="e.g., Tech Growth Strategy">
+                                        </div>
+                                        <div class="d-grid gap-2">
+                                            <button class="btn btn-primary" type="submit">Upload Strategy</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">Upload History</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table">
+                                            <thead>
+                                                <tr>
+                                                    <th>File Name</th>
+                                                    <th>Type</th>
+                                                    <th>Upload Date</th>
+                                                    <th>Status</th>
+                                                    <th>Records</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>companies_q1_2023.csv</td>
+                                                    <td>CSV</td>
+                                                    <td>Apr 10, 2023</td>
+                                                    <td><span class="badge bg-success">Completed</span></td>
+                                                    <td>128</td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-outline-info">View</button>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>tech_strategy_2023.pdf</td>
+                                                    <td>Strategy</td>
+                                                    <td>Apr 8, 2023</td>
+                                                    <td><span class="badge bg-success">Completed</span></td>
+                                                    <td>1</td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-outline-info">View</button>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td>healthcare_companies.csv</td>
+                                                    <td>CSV</td>
+                                                    <td>Apr 5, 2023</td>
+                                                    <td><span class="badge bg-success">Completed</span></td>
+                                                    <td>45</td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-outline-info">View</button>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analysis Page -->
+            <div class="page-content" id="analysis-page" style="display: none;">
+                <div class="container-fluid">
+                    <h1 class="page-title">Analysis</h1>
+                    <p class="page-description">Run analysis and view results.</p>
+
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">Run Analysis</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="analysisForm">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="strategySelect" class="form-label">Select Strategy</label>
+                                                    <select class="form-select" id="strategySelect">
+                                                        <option value="">Choose a strategy...</option>
+                                                        <option value="1">Tech Growth</option>
+                                                        <option value="2">Healthcare Innovation</option>
+                                                        <option value="3">Fintech Disruptors</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mb-3">
+                                                    <label for="analysisType" class="form-label">Analysis Type</label>
+                                                    <select class="form-select" id="analysisType">
+                                                        <option value="full">Full Analysis</option>
+                                                        <option value="quick">Quick Scan</option>
+                                                        <option value="deep">Deep Dive</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <h5 class="mt-3">Filters</h5>
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <div class="mb-3">
+                                                    <label for="industryFilter" class="form-label">Industry</label>
+                                                    <select class="form-select" id="industryFilter">
+                                                        <option value="">All Industries</option>
+                                                        <option value="tech">Technology</option>
+                                                        <option value="healthcare">Healthcare</option>
+                                                        <option value="fintech">Fintech</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="mb-3">
+                                                    <label for="revenueFilter" class="form-label">Revenue</label>
+                                                    <select class="form-select" id="revenueFilter">
+                                                        <option value="">All Revenues</option>
+                                                        <option value="1">$5M - $20M</option>
+                                                        <option value="2">$20M - $50M</option>
+                                                        <option value="3">$50M+</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="mb-3">
+                                                    <label for="locationFilter" class="form-label">Location</label>
+                                                    <select class="form-select" id="locationFilter">
+                                                        <option value="">All Locations</option>
+                                                        <option value="us">United States</option>
+                                                        <option value="eu">Europe</option>
+                                                        <option value="asia">Asia</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="d-grid gap-2 mt-3">
+                                            <button class="btn btn-primary" type="submit">Run Analysis</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h5 class="card-title">Analysis Results</h5>
+                                    <div class="btn-group">
+                                        <button class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-download"></i> Export
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-share"></i> Share
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="alert alert-info">
+                                        <i class="bi bi-info-circle"></i> Select a strategy and run analysis to see results.
+                                    </div>
+                                    
+                                    <div id="analysisResults" style="display: none;">
+                                        <h5>Top Matches for "Tech Growth" Strategy</h5>
+                                        <div class="table-responsive">
+                                            <table class="table table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Rank</th>
+                                                        <th>Company</th>
+                                                        <th>Score</th>
+                                                        <th>Key Strengths</th>
+                                                        <th>Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td>1</td>
+                                                        <td>TechCorp Inc</td>
+                                                        <td>92%</td>
+                                                        <td>Strong growth, market leader</td>
+                                                        <td>
+                                                            <button class="btn btn-sm btn-outline-primary">View</button>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>2</td>
+                                                        <td>DataSys</td>
+                                                        <td>87%</td>
+                                                        <td>Innovative technology, stable revenue</td>
+                                                        <td>
+                                                            <button class="btn btn-sm btn-outline-primary">View</button>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td>3</td>
+                                                        <td>AICore</td>
+                                                        <td>85%</td>
+                                                        <td>High growth, emerging market</td>
+                                                        <td>
+                                                            <button class="btn btn-sm btn-outline-primary">View</button>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        
+                                        <h5 class="mt-4">Analysis Insights</h5>
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <p><strong>Key Findings:</strong></p>
+                                                <ul>
+                                                    <li>Companies in the enterprise software segment show strongest alignment with strategy criteria</li>
+                                                    <li>Growth rates above 20% correlate with higher overall scores</li>
+                                                    <li>Boston and San Francisco regions have the highest concentration of matching companies</li>
+                                                </ul>
+                                                <p><strong>Recommendations:</strong></p>
+                                                <ul>
+                                                    <li>Focus on top 5 matches for detailed due diligence</li>
+                                                    <li>Consider expanding criteria to include companies with 15%+ growth rate</li>
+                                                    <li>Monitor AICore closely as it shows highest growth potential</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
