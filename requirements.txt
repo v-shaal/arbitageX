@@ -1,0 +1,12 @@
+llama-index
+google-generativeai
+python-dotenv
+chromadb
+pandas
+fastapi
+uvicorn[standard]
+crawl4ai
+beautifulsoup4
+requests
+llama-index-embeddings-huggingface
+sentence-transformers
