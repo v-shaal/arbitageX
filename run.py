@@ -38,11 +38,11 @@ app.add_middleware(
 
 # Configure LlamaIndex settings globally BEFORE importing other modules
 print("Configuring global LlamaIndex settings...")
-# UPDATE: Use the specific Gemini 1.5 Pro model identifier
-Settings.llm = Gemini(model_name="models/gemini-1.5-pro-002") 
+# UPDATE: Use the specific Gemini 1.5 Pro model identifier requested
+Settings.llm = Gemini(model_name="models/gemini-2.5-pro-preview-03-25") 
 # Optionally configure embeddings globally too
 # Settings.embed_model = GeminiEmbedding(model_name="models/embedding-001") 
-# FIX: Access model name via .model attribute
+# Access model name via .model attribute
 print(f"LLM set to: {type(Settings.llm)} with model name: {Settings.llm.model}") 
 # print(f"Embedding model set to: {type(Settings.embed_model)}")
 # --- End LlamaIndex Global Settings ---

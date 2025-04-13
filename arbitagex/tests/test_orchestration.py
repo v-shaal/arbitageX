@@ -39,8 +39,8 @@ except Exception as e:
 from arbitagex.backend.orchestration import run_profile_generation
 
 # --- Configuration for the Test ---
-TARGET_COMPANY_ID = 67 # Example: Embark IT, Inc. (Use a valid ID from your DB)
-TARGET_COMPANY_NAME = "Embark IT, Inc."
+TARGET_COMPANY_ID = 66 # Example: Embark IT, Inc. (Use a valid ID from your DB)
+TARGET_COMPANY_NAME = "Prime Communications, Inc."
 # --- End Test Configuration ---
 
 # --- Logging Setup ---
