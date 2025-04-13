@@ -13,7 +13,7 @@ The system follows a layered architecture:
 3.  **Orchestration Layer (Langchain):**  Manages multi-step workflows like full company profile generation. Uses a Langchain agent and custom tools which interact with the Backend API/Agent Layer.
 4.  **Agent Layer:** Contains specialized agents responsible for specific tasks (search, crawl, extract, store, analyze). These are triggered by API endpoints or the Orchestration Layer.
 5.  **AI Core (LlamaIndex, Gemini, AI Components):** Provides the core AI capabilities – primarily LLM interaction for reasoning and information extraction, potentially vector embeddings and search.
-6.  **Data Storage:** Persists application data using relational databases (via SQLAlchemy) and potentially vector databases (via LlamaIndex integrations like ChromaDB - *initial assumption, needs confirmation*).
+6.  **Data Storage:** Persists application data using relational databases (via SQLAlchemy) and potentially vector databases (via LlamaIndex integrations like ChromaDB *).
 7.  **External Services:** Integrates with third-party APIs for specific functions (e.g., Tavily for search).
 
 ## 3. Technology Stack
