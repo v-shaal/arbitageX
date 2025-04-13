@@ -10,7 +10,7 @@ The system follows a layered architecture:
 
 1.  **Frontend:** (Not detailed here, but interacts via REST API) A web-based user interface allowing users to manage strategies, view companies, trigger analyses, and initiate research.
 2.  **Backend API (FastAPI):** Exposes RESTful endpoints for all frontend interactions and potentially for external system integration. Handles request validation, basic business logic, and delegates complex tasks to the agent layer.
-3.  **Orchestration Layer (Langchain):** (Newly added) Manages multi-step workflows like full company profile generation. Uses a Langchain agent and custom tools which interact with the Backend API/Agent Layer.
+3.  **Orchestration Layer (Langchain):**  Manages multi-step workflows like full company profile generation. Uses a Langchain agent and custom tools which interact with the Backend API/Agent Layer.
 4.  **Agent Layer:** Contains specialized agents responsible for specific tasks (search, crawl, extract, store, analyze). These are triggered by API endpoints or the Orchestration Layer.
 5.  **AI Core (LlamaIndex, Gemini, AI Components):** Provides the core AI capabilities – primarily LLM interaction for reasoning and information extraction, potentially vector embeddings and search.
 6.  **Data Storage:** Persists application data using relational databases (via SQLAlchemy) and potentially vector databases (via LlamaIndex integrations like ChromaDB - *initial assumption, needs confirmation*).
