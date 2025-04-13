@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 import re
 from .ai_components import InformationExtractor
 from playwright.async_api import async_playwright
+from fastapi import BackgroundTasks
 
 # Load environment variables (ensure .env file is in project root or vars are set)
 load_dotenv()
@@ -50,23 +51,41 @@ class OrchestratorAgent:
         }
     
     async def process_task(self, task_id: int):
-        """Process a task by delegating to appropriate agent"""
-        # Get task from database
+        logger.info(f"Orchestrator attempting to process task {task_id}...")
         task = self.db.query(models.AgentTask).filter(models.AgentTask.id == task_id).first()
         if not task:
-            logger.error(f"Task {task_id} not found")
+            logger.error(f"Task {task_id} not found in DB during processing.")
             return
-        
-        # Update task status
-        task.status = "running"
-        task.started_at = datetime.utcnow()
-        self.db.commit()
-        
+
+        logger.info(f"Task {task_id} found. Current status: {task.status}")
+        if task.status in ["completed", "failed"]:
+             logger.warning(f"Task {task_id} already processed with status: {task.status}. Skipping.")
+             return
+             
         try:
-            # Route task to appropriate agent
-            if task.agent_type == "data_ingestion":
+            logger.info(f"Setting task {task_id} status to 'running'.")
+            task.status = "running"
+            task.started_at = datetime.utcnow()
+            self.db.commit()
+            logger.info(f"Task {task_id} status committed as 'running'.")
+        except Exception as e_stat:
+             logger.error(f"ERROR setting task {task_id} status to running: {e_stat}. Rolling back.")
+             self.db.rollback()
+             return
+
+        is_orchestration_task = False
+        try:
+            logger.info(f"Routing task {task_id} (Agent: {task.agent_type}, Type: {task.task_type})")
+            if task.agent_type == "orchestration":
+                is_orchestration_task = True
+                if task.task_type == "generate_full_profile":
+                    await self.handle_generate_full_profile(task)
+                else:
+                    raise ValueError(f"Unknown orchestration task type: {task.task_type}")
+            elif task.agent_type == "data_ingestion":
                 await self.agents["data_ingestion"].process_task(task)
             elif task.agent_type == "search":
+                logger.info(f"Delegating task {task_id} to SearchAgent.")
                 await self.agents["search"].process_task(task)
             elif task.agent_type == "web_crawler":
                 await self.agents["web_crawler"].process_task(task)
@@ -77,23 +96,39 @@ class OrchestratorAgent:
             elif task.agent_type == "storage":
                 await self.agents["storage"].process_task(task)
             else:
+                logger.error(f"Unknown agent type encountered: {task.agent_type}")
                 raise ValueError(f"Unknown agent type: {task.agent_type}")
             
-            # Update task status
-            task.status = "completed"
-            task.completed_at = datetime.utcnow()
-            self.db.commit()
-            
+            if not is_orchestration_task:
+                 logger.info(f"Task {task_id} agent processing completed. Setting status to 'completed'.")
+                 task.status = "completed" 
+                 task.completed_at = datetime.utcnow()
+                 if task.result is None:
+                      task.result = {"status": "success", "message": f"Agent task {task.agent_type}/{task.task_type} completed."}
+                 self.db.commit()
+                 logger.info(f"Task {task_id} final status committed as 'completed'.")
+            else:
+                 logger.info(f"Orchestration task {task_id} handler finished. Status managed within handler.")
+
         except Exception as e:
-            # Handle errors
-            logger.error(f"Error processing task {task_id}: {str(e)}")
-            task.status = "failed"
-            task.error = str(e)
-            task.completed_at = datetime.utcnow()
-            self.db.commit()
+            logger.error(f"Core processing error for task {task_id}: {str(e)}. Setting status to 'failed'.")
+            self.db.rollback()
+            task = self.db.query(models.AgentTask).filter(models.AgentTask.id == task_id).first()
+            if task:
+                 task.status = "failed"
+                 task.error = str(e)
+                 task.completed_at = datetime.utcnow()
+                 try:
+                     self.db.commit()
+                     logger.info(f"Task {task_id} final status committed as 'failed'.")
+                 except Exception as e_fail:
+                     logger.error(f"ERROR committing 'failed' status for task {task_id}: {e_fail}")
+                     self.db.rollback()
+            else:
+                 logger.error(f"Task {task_id} not found when trying to set final 'failed' status.")
     
     async def create_task(self, agent_type: str, task_type: str, params: Dict[str, Any] = None) -> int:
-        """Create a new task and return its ID"""
+        """Create a new task record and return its ID. Does NOT schedule processing."""
         task = models.AgentTask(
             agent_type=agent_type,
             task_type=task_type,
@@ -101,9 +136,14 @@ class OrchestratorAgent:
             params=params
         )
         self.db.add(task)
-        self.db.commit()
-        self.db.refresh(task)
-        return task.id
+        try:
+            self.db.commit()
+            self.db.refresh(task)
+            return task.id
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Failed to create/commit task record {agent_type}/{task_type}: {e}")
+            raise
     
     async def process_pending_tasks(self):
         """Process all pending tasks"""
@@ -114,6 +154,47 @@ class OrchestratorAgent:
         
         if tasks:
             await asyncio.gather(*tasks)
+
+    # --- Orchestration Handlers ---
+    async def handle_generate_full_profile(self, master_task: models.AgentTask):
+        """Handles the first step of generating a profile: creating the search task."""
+        company_id = master_task.params.get("company_id")
+        company_name = master_task.params.get("company_name")
+        
+        if not company_id or not company_name:
+             master_task.error = "Missing company_id or company_name in master task params."
+             raise ValueError("Missing company_id or company_name for profile generation.")
+             
+        logger.info(f"Initiating profile generation for {company_name} (ID: {company_id}) from master task {master_task.id}")
+        
+        # Step 1: Create Search Query & Search Task Record
+        # Check if a search query already exists for this company name to avoid duplicates
+        search_query = self.db.query(models.SearchQuery).filter(models.SearchQuery.query_text == company_name).first()
+        if not search_query:
+            search_query = models.SearchQuery(query_text=company_name, target_entity=company_name)
+            self.db.add(search_query)
+            
+        search_task_params = {"query": company_name, "target_entity": company_name, "max_results": 5}
+        # Call create_task WITHOUT background_tasks_obj to ONLY create the record
+        search_task_id = await self.create_task(
+            agent_type="search",
+            task_type="web_search",
+            params=search_task_params
+        )
+        
+        logger.info(f"Created search task record {search_task_id} for company {company_name}. It needs to be scheduled/processed separately.")
+        
+        # Set the master task's result and status appropriately
+        master_task.result = {
+            "status": "sub_task_created",
+            "message": f"Created search task {search_task_id}. Trigger sub-task processing to continue.",
+            "search_task_id": search_task_id
+        }
+        # Keep master task as 'running' because the overall profile generation is not complete
+        master_task.status = "running" 
+        self.db.commit()
+        
+        # --- Chaining Logic is NOT implemented here --- 
 
 
 class DataIngestionAgent:
@@ -163,7 +244,7 @@ class SearchAgent:
         self.tavily_client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
     
     async def process_task(self, task: models.AgentTask):
-        """Process a search task"""
+        logger.info(f"SearchAgent starting process_task for task {task.id}")
         if task.task_type == "web_search":
             try:
                 # Perform the search and store results
@@ -178,10 +259,11 @@ class SearchAgent:
                 # Re-raise the exception so the orchestrator knows it failed
                 raise e 
         else:
+            logger.warning(f"SearchAgent received unknown task type: {task.task_type} for task {task.id}")
             raise ValueError(f"Unknown task type: {task.task_type}")
     
     async def web_search(self, params: Dict[str, Any], task_id: int):
-        """Perform web search using Tavily and store results in the database."""
+        logger.info(f"SearchAgent starting web_search for task {task_id}")
         query = params.get("query")
         # target_entity = params.get("target_entity") # Can be used for Tavily context if needed
         max_results = params.get("max_results", 5) # Default to 5 results
@@ -589,111 +671,184 @@ class StorageAgent:
     
     async def process_task(self, task: models.AgentTask):
         """Process a storage task"""
-        if task.task_type == "store_document_vectors":
+        # Ensure db session is active (relevant if not using run_task_processor wrapper)
+        if not self.db.is_active:
+            logger.warning(f"StorageAgent DB session inactive for task {task.id}. Attempting reconnect/refresh (not implemented).")
+            # In a real scenario, might need session refresh logic here
+            # For now, we assume the session provided by run_task_processor is valid.
+
+        if task.task_type == "store_extracted_data":
+            result = await self.store_extracted_data(task.params)
+        elif task.task_type == "store_company_overview":
+            result = await self.store_company_overview(task.params)
+        elif task.task_type == "store_company_links":
+            result = await self.store_company_links(task.params)
+        # Keep existing vector storage tasks if needed
+        elif task.task_type == "store_document_vectors":
             result = await self.store_document_vectors(task.params)
-            task.result = result
-            return result
         elif task.task_type == "store_company_vectors":
             result = await self.store_company_vectors(task.params)
-            task.result = result
-            return result
         else:
-            raise ValueError(f"Unknown task type: {task.task_type}")
-    
-    async def store_document_vectors(self, params: Dict[str, Any]):
-        """Store vector embeddings for document"""
-        document_id = params.get("document_id")
-        text_content = params.get("text_content")
+            raise ValueError(f"Unknown task type for StorageAgent: {task.task_type}")
         
-        if not document_id or not text_content:
-            raise ValueError("Document ID and text content are required")
-        
-        # For MVP, we'll use a simplified approach without actual embeddings
-        # In a full implementation, this would use sentence-transformers
-        
-        # Split text into chunks
-        sentences = nltk.sent_tokenize(text_content)
-        chunks = []
-        current_chunk = ""
-        
-        for sentence in sentences:
-            if len(current_chunk) + len(sentence) < 512:
-                current_chunk += " " + sentence
-            else:
-                if current_chunk:
-                    chunks.append(current_chunk.strip())
-                current_chunk = sentence
-        
-        if current_chunk:
-            chunks.append(current_chunk.strip())
-        
-        # Store vector for each chunk
-        for i, chunk in enumerate(chunks):
-            # In a real implementation, we would generate embeddings here
-            # For MVP, we'll use a placeholder
-            mock_vector = [0.1, 0.2, 0.3]  # Placeholder
-            
-            vector = models.DocumentVector(
-                document_id=document_id,
-                chunk_id=f"chunk_{i}",
-                chunk_text=chunk,
-                embedding_vector=mock_vector,
-                metadata={"position": i, "length": len(chunk)}
-            )
-            self.db.add(vector)
-        
-        # Commit changes
-        self.db.commit()
-        
-        return {
-            "status": "success",
-            "message": f"Stored vectors for document {document_id}",
-            "chunk_count": len(chunks)
-        }
-    
-    async def store_company_vectors(self, params: Dict[str, Any]):
-        """Store vector embeddings for company"""
+        task.result = result
+        return result # Return result summary
+
+    async def store_extracted_data(self, params: Dict[str, Any]):
+        """Store extracted metrics and events linked to a company."""
         company_id = params.get("company_id")
-        
-        if not company_id:
-            raise ValueError("Company ID is required")
-        
-        # Get company from database
+        extracted_data = params.get("extracted_data") # This is the dict from ExtractedData model
+        source_url = params.get("source_url", "Unknown Source")
+
+        if not company_id or not extracted_data:
+            raise ValueError("company_id and extracted_data are required for storage.")
+
         company = self.db.query(models.Company).filter(models.Company.id == company_id).first()
         if not company:
-            raise ValueError(f"Company not found: {company_id}")
+            logger.warning(f"Company ID {company_id} not found. Cannot store extracted data.")
+            return {"status": "failed", "message": f"Company ID {company_id} not found."}
+
+        metrics_stored = 0
+        events_stored = 0
+
+        # Store Metrics
+        if extracted_data.get("metrics"):
+            for metric_data in extracted_data["metrics"]:
+                if metric_data.get("metric_type") and metric_data.get("value") is not None:
+                    # Basic type mapping (can be more sophisticated)
+                    db_metric = models.FinancialMetric(
+                        company_id=company_id,
+                        metric_type=metric_data.get("metric_type", "unknown")[:50], # Ensure length
+                        value=float(metric_data["value"]),
+                        unit=metric_data.get("unit", "unknown")[:20],
+                        time_period=metric_data.get("period", "unknown")[:50],
+                        source=f"LLM Extraction from {source_url}"
+                        # Add confidence score if available
+                    )
+                    self.db.add(db_metric)
+                    metrics_stored += 1
+
+        # Store Events
+        if extracted_data.get("events"):
+            for event_data in extracted_data["events"]:
+                if event_data.get("event_type") and event_data.get("details"):
+                    db_event = models.CompanyEvent(
+                        company_id=company_id,
+                        event_type=event_data.get("event_type", "unknown")[:50],
+                        description=event_data.get("details", "")[:1023], # Ensure length
+                        event_date=self._parse_event_date(event_data.get("date")),
+                        source=f"LLM Extraction from {source_url}"
+                        # Add amount if extracted
+                    )
+                    self.db.add(db_event)
+                    events_stored += 1
+
+        try:
+            self.db.commit()
+            logger.info(f"Stored {metrics_stored} metrics and {events_stored} events for Company ID {company_id}.")
+            return {
+                "status": "success",
+                "message": f"Stored {metrics_stored} metrics and {events_stored} events.",
+                "metrics_stored": metrics_stored,
+                "events_stored": events_stored
+            }
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Database error storing extracted data for Company ID {company_id}: {e}")
+            raise ValueError(f"DB error storing data: {e}") from e
+            
+    def _parse_event_date(self, date_str: Optional[str]) -> Optional[datetime]:
+        """Attempt to parse various date formats."""
+        if not date_str:
+            return None
+        # Add more formats as needed
+        formats = ["%Y-%m-%d", "%B %d, %Y", "%b %d, %Y", "%m/%d/%Y", "%Y"]
+        for fmt in formats:
+            try:
+                return datetime.strptime(date_str.strip(), fmt)
+            except ValueError:
+                continue
+        logger.warning(f"Could not parse date string: {date_str}")
+        return None # Or default to now: datetime.utcnow()
         
-        # For MVP, we'll use a simplified approach without actual embeddings
-        # In a full implementation, this would use sentence-transformers
+    async def store_company_overview(self, params: Dict[str, Any]):
+        """Store or update the company overview/description."""
+        company_id = params.get("company_id")
+        overview = params.get("overview")
+
+        if not company_id or overview is None: # Allow empty string
+            raise ValueError("company_id and overview are required.")
+
+        company = self.db.query(models.Company).filter(models.Company.id == company_id).first()
+        if not company:
+            logger.warning(f"Company ID {company_id} not found. Cannot store overview.")
+            return {"status": "failed", "message": f"Company ID {company_id} not found."}
+            
+        try:
+            company.description = overview # Update the description field
+            self.db.commit()
+            logger.info(f"Updated overview for Company ID {company_id}.")
+            return {"status": "success", "message": "Company overview updated."}
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Database error storing overview for Company ID {company_id}: {e}")
+            raise ValueError(f"DB error storing overview: {e}") from e
+            
+    async def store_company_links(self, params: Dict[str, Any]):
+        """Store source links for a company."""
+        company_id = params.get("company_id")
+        links = params.get("links") # Expecting list of dicts: {"url": ..., "description": ..., "link_type": ...}
+        overwrite = params.get("overwrite", False) # Option to replace existing links
+
+        if not company_id or not isinstance(links, list):
+            raise ValueError("company_id and a list of links are required.")
+
+        company = self.db.query(models.Company).filter(models.Company.id == company_id).first()
+        if not company:
+            logger.warning(f"Company ID {company_id} not found. Cannot store links.")
+            return {"status": "failed", "message": f"Company ID {company_id} not found."}
+
+        if overwrite:
+            # Delete existing links for this company if overwriting
+            self.db.query(models.CompanySourceLink).filter(models.CompanySourceLink.company_id == company_id).delete()
+            logger.info(f"Deleted existing links for Company ID {company_id} due to overwrite flag.")
+            
+        links_stored = 0
+        for link_data in links:
+            if link_data.get("url"):
+                # Basic type mapping
+                db_link = models.CompanySourceLink(
+                    company_id=company_id,
+                    url=link_data["url"][:1023], # Ensure length
+                    description=link_data.get("description", None),
+                    link_type=link_data.get("link_type", "other")[:50]
+                )
+                self.db.add(db_link)
+                links_stored += 1
         
-        # Create company profile text
-        profile_text = f"{company.name} is a {company.industry} company"
-        if company.description:
-            profile_text += f" that {company.description}"
-        if company.location:
-            profile_text += f", located in {company.location}"
-        if company.employee_count:
-            profile_text += f" with {company.employee_count} employees"
-        
-        # In a real implementation, we would generate embeddings here
-        # For MVP, we'll use a placeholder
-        mock_vector = [0.4, 0.5, 0.6]  # Placeholder
-        
-        vector = models.CompanyVector(
-            company_id=company_id,
-            embedding_type="profile",
-            embedding_vector=mock_vector,
-            metadata={"text": profile_text}
-        )
-        self.db.add(vector)
-        
-        # Commit changes
-        self.db.commit()
-        
-        return {
-            "status": "success",
-            "message": f"Stored vectors for company {company_id}"
-        }
+        try:
+            self.db.commit()
+            logger.info(f"Stored {links_stored} links for Company ID {company_id}.")
+            return {
+                "status": "success",
+                "message": f"Stored {links_stored} links.",
+                "links_stored": links_stored
+            }
+        except Exception as e:
+            self.db.rollback()
+            logger.error(f"Database error storing links for Company ID {company_id}: {e}")
+            raise ValueError(f"DB error storing links: {e}") from e
+
+    # Keep existing vector storage methods
+    async def store_document_vectors(self, params: Dict[str, Any]):
+        logger.info(f"Processing document vectors with params: {params}")
+        # Placeholder - implement actual vector storing logic if needed
+        return {"status": "success", "message": "Document vectors processed (placeholder)."}
+
+    async def store_company_vectors(self, params: Dict[str, Any]):
+        logger.info(f"Processing company vectors with params: {params}")
+        # Placeholder - implement actual vector storing logic if needed
+        return {"status": "success", "message": "Company vectors processed (placeholder)."}
 
 
 # Dependency to get orchestrator

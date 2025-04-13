@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 import pandas as pd
 import json
 import os
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from datetime import datetime
 
 from . import models, schemas
@@ -12,7 +12,7 @@ from .database import engine, get_db, SessionLocal
 from .agents import OrchestratorAgent
 
 # Create database tables
-# models.Base.metadata.create_all(bind=engine) # Move table creation to main app startup if needed
+models.Base.metadata.create_all(bind=engine)
 
 # Initialize APIRouter instead of FastAPI app
 router = APIRouter()
@@ -62,11 +62,20 @@ def create_company(company: schemas.CompanyCreate, db: Session = Depends(get_db)
     return db_company
 
 @router.get("/companies/", response_model=List[schemas.Company])
-def read_companies(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    # Add a filter to exclude companies where the name starts with "Test Company"
-    companies = db.query(models.Company).filter(
+def read_companies(
+    skip: int = 0, 
+    limit: int = 100, 
+    name: Optional[str] = None, # Add name query parameter
+    db: Session = Depends(get_db)
+):
+    query = db.query(models.Company).filter(
         ~models.Company.name.startswith("Test Company")
-    ).offset(skip).limit(limit).all()
+    )
+    # Apply name filter if provided (case-insensitive partial match)
+    if name:
+        query = query.filter(models.Company.name.ilike(f"%{name}%"))
+        
+    companies = query.offset(skip).limit(limit).all()
     return companies
 
 @router.get("/companies/{company_id}", response_model=schemas.Company)
@@ -448,6 +457,220 @@ async def trigger_extraction_task_for_crawl(
     return {
         "message": f"Created and initiated information extraction task {db_task.id} based on crawl task {crawl_task_id}.",
         "extraction_task_id": db_task.id
+    }
+
+# Endpoint to manually trigger processing for a specific pending task
+@router.post("/tasks/{task_id}/process", status_code=202)
+async def trigger_specific_task_processing(
+    task_id: int,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
+    """Manually triggers the background processing for a specific task ID."""
+    # Find the task
+    task = db.query(models.AgentTask).filter(models.AgentTask.id == task_id).first()
+    if not task:
+        raise HTTPException(status_code=404, detail=f"Task ID {task_id} not found.")
+        
+    # Optional: Check if task is already running/completed/failed
+    if task.status != "pending":
+        return {"message": f"Task {task_id} is not pending (status: {task.status}). Processing not re-initiated."}
+
+    # Schedule the task using the existing background processor
+    background_tasks.add_task(run_task_processor, task.id)
+    
+    return {"message": f"Processing manually triggered for task ID {task_id}. Monitor its status."}
+
+# Endpoint to trigger overview generation and storage for a company
+# Modified to create a master orchestration task
+@router.post("/companies/{company_id}/update-overview", status_code=202)
+async def trigger_company_profile_update(
+    company_id: int,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
+    """Creates a master task to generate a full profile (overview, links, financials) for a company."""
+    # 1. Find Company
+    company = db.query(models.Company).filter(models.Company.id == company_id).first()
+    if not company:
+        raise HTTPException(status_code=404, detail=f"Company ID {company_id} not found.")
+
+    # 2. Create the master orchestration task
+    db_task = models.AgentTask(
+        # Define a new agent type or use a general 'orchestration' type
+        agent_type="orchestration", 
+        task_type="generate_full_profile",
+        status="pending",
+        # Pass the company ID and name needed to start the process
+        params={"company_id": company_id, "company_name": company.name} 
+    )
+    db.add(db_task)
+    db.commit()
+    db.refresh(db_task)
+    
+    # 3. Schedule the master task using the background processor
+    background_tasks.add_task(run_task_processor, db_task.id)
+    
+    return {
+        "message": f"Master task created to generate full profile for Company ID {company_id}. Monitor task status.",
+        "master_task_id": db_task.id
+    }
+
+# Endpoint to trigger searching and storing source links for a company
+# NOTE: This update-links endpoint should ideally also become part of the 
+# 'generate_full_profile' orchestration task rather than being separate.
+# We will leave it for now but recommend merging its goal into the main profile task.
+@router.post("/companies/{company_id}/update-links", status_code=202)
+async def update_company_links(
+    company_id: int,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
+    """Triggers tasks to search for company links (website, linkedin etc.) and store them."""
+    # 1. Find Company
+    company = db.query(models.Company).filter(models.Company.id == company_id).first()
+    if not company:
+        raise HTTPException(status_code=404, detail=f"Company ID {company_id} not found.")
+
+    # 2. Create Search Task (Example: Search for official website and LinkedIn)
+    search_query_text = f"{company.name} official website linkedin profile"
+    search_task = models.AgentTask(
+        agent_type="search",
+        task_type="web_search",
+        status="pending",
+        params={"query": search_query_text, "target_entity": company.name, "max_results": 3}
+    )
+    db.add(search_task)
+    db.commit()
+    db.refresh(search_task)
+    background_tasks.add_task(run_task_processor, search_task.id)
+    
+    # --- How to link Search Results back to Link Storage? ---
+    # This is complex. Current setup doesn't automatically chain:
+    # Search -> Crawl -> Extract Link Type -> Store Link
+    # For MVP, we'll *simulate* finding links and create a direct storage task.
+    # In reality, this needs better orchestration.
+    
+    # --- Simulation: Assume search/crawl/extract found these links ---
+    simulated_links = [
+        {"url": f"https://{company.name.lower().replace(' ', '')}.com", "link_type": "website", "description": "Simulated Official Website"},
+        {"url": f"https://linkedin.com/company/{company.name.lower().replace(' ', '-')}", "link_type": "linkedin", "description": "Simulated LinkedIn Profile"}
+    ]
+    if company.website: # Add existing website if present
+         if not any(l['url'] == company.website for l in simulated_links):
+              simulated_links.append({"url": company.website, "link_type": "website", "description": "Existing Website"})
+    # -----------------------------------------------------------------
+
+    # 3. Create Task to Store the (Simulated) Links
+    # Use overwrite=True to replace previous links found by this process
+    link_storage_task = models.AgentTask(
+        agent_type="storage",
+        task_type="store_company_links",
+        status="pending",
+        params={"company_id": company_id, "links": simulated_links, "overwrite": True} 
+    )
+    db.add(link_storage_task)
+    db.commit()
+    db.refresh(link_storage_task)
+    background_tasks.add_task(run_task_processor, link_storage_task.id)
+
+    return {
+        "message": f"Tasks created to find and store links for Company ID {company_id}. Check task statuses.",
+        "search_task_id": search_task.id,
+        "link_storage_task_id": link_storage_task.id
+    }
+
+# Endpoint to trigger storage of aggregated extracted data for a company
+@router.post("/tasks/store-aggregated-data/{company_id}", status_code=202)
+async def trigger_storage_for_company(
+    company_id: int,
+    aggregated_data: List[Dict[str, Any]], # Expect a list of extracted_data dicts
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
+    """Receives aggregated extracted data and triggers various storage agent tasks."""
+    # 1. Find Company (optional check)
+    company = db.query(models.Company).filter(models.Company.id == company_id).first()
+    if not company:
+        raise HTTPException(status_code=404, detail=f"Company ID {company_id} not found.")
+        
+    if not aggregated_data:
+         return {"message": "No aggregated data provided. Nothing to store."}
+         
+    # --- Trigger Storage Tasks --- 
+    storage_task_ids = []
+    overview_to_store = None
+    links_to_store = []
+    metrics_events_payloads = [] # Store payloads for store_extracted_data
+    
+    # Consolidate data
+    for data_item in aggregated_data:
+        # Prepare payload for metrics/events storage
+        metrics_events_payloads.append({
+            "company_id": company_id,
+            "extracted_data": data_item, # Pass the whole item 
+            "source_url": data_item.get("source_url", "Unknown") 
+        })
+        
+        # Find the best summary/overview (e.g., from the first source)
+        if not overview_to_store and data_item.get("summary"): 
+            overview_to_store = data_item.get("summary")
+            
+        # Collect potential links (Refine this logic as needed)
+        source_url = data_item.get("source_url")
+        if source_url:
+             link_type = "other" # Default
+             if "linkedin.com" in source_url: link_type = "linkedin"
+             # Add logic to detect website based on company name if needed
+             links_to_store.append({"url": source_url, "link_type": link_type, "description": f"Source: {data_item.get('company_name_mentioned', 'Extracted Data')}"})
+    
+    # Create task for storing Metrics & Events (can be one task per source)
+    for payload in metrics_events_payloads:
+        db_task_metrics_events = models.AgentTask(
+            agent_type="storage",
+            task_type="store_extracted_data",
+            status="pending",
+            params=payload 
+        )
+        db.add(db_task_metrics_events)
+        db.commit()
+        db.refresh(db_task_metrics_events)
+        background_tasks.add_task(run_task_processor, db_task_metrics_events.id)
+        storage_task_ids.append(db_task_metrics_events.id)
+
+    # Create task for storing Overview (if found)
+    if overview_to_store:
+        db_task_overview = models.AgentTask(
+            agent_type="storage",
+            task_type="store_company_overview",
+            status="pending",
+            params={"company_id": company_id, "overview": overview_to_store}
+        )
+        db.add(db_task_overview)
+        db.commit()
+        db.refresh(db_task_overview)
+        background_tasks.add_task(run_task_processor, db_task_overview.id)
+        storage_task_ids.append(db_task_overview.id)
+        
+    # Create task for storing Links (if any found)
+    if links_to_store:
+        db_task_links = models.AgentTask(
+            agent_type="storage",
+            task_type="store_company_links",
+            status="pending",
+            # Use overwrite=False by default to avoid deleting manually added links?
+            # Or maybe filter links_to_store for uniqueness before saving.
+            params={"company_id": company_id, "links": links_to_store, "overwrite": False} 
+        )
+        db.add(db_task_links)
+        db.commit()
+        db.refresh(db_task_links)
+        background_tasks.add_task(run_task_processor, db_task_links.id)
+        storage_task_ids.append(db_task_links.id)
+        
+    return {
+        "message": f"Triggered {len(storage_task_ids)} storage sub-tasks for Company ID {company_id}.",
+        "storage_task_ids": storage_task_ids
     }
 
 # Analysis endpoints

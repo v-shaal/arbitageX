@@ -20,6 +20,24 @@ class Company(CompanyBase):
     id: int
     created_at: datetime
     updated_at: datetime
+    source_links: List['CompanySourceLink'] = []
+
+    class Config:
+        orm_mode = True
+
+# New Schemas for Company Source Links
+class CompanySourceLinkBase(BaseModel):
+    url: str
+    description: Optional[str] = None
+    link_type: Optional[str] = "other"
+
+class CompanySourceLinkCreate(CompanySourceLinkBase):
+    company_id: int
+
+class CompanySourceLink(CompanySourceLinkBase):
+    id: int
+    company_id: int
+    added_at: datetime
 
     class Config:
         orm_mode = True
@@ -222,3 +240,6 @@ class StrategyUploadResponse(BaseModel):
     status: str
     document_id: int
     message: str
+
+# Update Company schema to include the new list type forward reference
+Company.model_rebuild()

@@ -27,6 +27,7 @@ class Company(Base):
     events = relationship("CompanyEvent", back_populates="company")
     people = relationship("Person", back_populates="company")
     analysis_results = relationship("AnalysisResult", back_populates="company")
+    source_links = relationship("CompanySourceLink", back_populates="company", cascade="all, delete-orphan")
 
 class FinancialMetric(Base):
     """Model for storing company financial metrics."""
@@ -221,3 +222,18 @@ class AgentTask(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     started_at = Column(DateTime, nullable=True)
     completed_at = Column(DateTime, nullable=True)
+
+# New Model for Company Source Links
+class CompanySourceLink(Base):
+    """Model for storing source URLs related to a company."""
+    __tablename__ = "company_source_links"
+
+    id = Column(Integer, primary_key=True, index=True)
+    company_id = Column(Integer, ForeignKey("companies.id"))
+    url = Column(String(1024), nullable=False)
+    description = Column(String(255), nullable=True) # e.g., "Official Website", "LinkedIn Profile", "News Article"
+    link_type = Column(String(50), index=True) # e.g., website, linkedin, crunchbase, news, other
+    added_at = Column(DateTime, default=datetime.utcnow)
+
+    # Relationship back to Company
+    company = relationship("Company", back_populates="source_links")
